@@ -60,8 +60,9 @@ struct cloogoptions
 {
   CloogState *state; /* State. */
   /* OPTIONS FOR LOOP GENERATION */
-  int l ;           /* Last level to optimize. */
-  int f ;           /* First level to optimize. */
+  int l ;             /* Last level to optimize. */
+  int f ;             /* First level to optimize. */
+  int invariant_decl; /* Print (specified) loop invariant declarations of statement(s) */
 
   int *ls;         /* Last level to optimize (statement-wise). */
   int *fs;         /* First level to optimize (statement-wise). */

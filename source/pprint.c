@@ -532,31 +532,33 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
                 pprint_expr(options, dst, f->UB);
                 fprintf(dst, ";\n");
             }
-            FILE *fp = fopen("__temp.s", "a+");
-            if (fp != NULL) {
-                pprint_stmt_list(options, fp, 0, f->body);
+            if (options->invariant_decl) {
+                FILE *fp = fopen("__temp.s", "a+");
+                if (fp != NULL) {
+                    pprint_stmt_list(options, fp, 0, f->body);
 
-                char *temp_str = (char *)malloc(1024);
-                temp_str[0] = 0;
+                    char *temp_str = (char *)malloc(1024);
+                    temp_str[0] = 0;
 
-                rewind(fp);
+                    rewind(fp);
 
-                fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "##if (defined __DATA_DIST_DECLS || defined USE_LOCAL_ARRAYS)\n");
+                    fprintf(dst, "%*s", indent, "");
+                    fprintf(dst, "##if (defined __DATA_DIST_DECLS || defined USE_LOCAL_ARRAYS)\n");
 
-                while (fgets(temp_str, 1024, fp)) {
-                    char *str = pprint_replacestr(temp_str, "S", "decl_S");
-                    if (str) {
-                        fprintf(dst, "%*s", indent, "");
-                        fprintf(dst, "%s", str);
+                    while (fgets(temp_str, 1024, fp)) {
+                        char *str = pprint_replacestr(temp_str, "S", "decl_S");
+                        if (str) {
+                            fprintf(dst, "%*s", indent, "");
+                            fprintf(dst, "%s", str);
+                        }
                     }
+
+                    fprintf(dst, "%*s", indent, "");
+                    fprintf(dst, "##endif\n");
+
+                    fclose(fp);
+                    remove("__temp.s");
                 }
-
-                fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "##endif\n");
-
-                fclose(fp);
-                remove("__temp.s");
             }
 
             fprintf(dst, "%*s#pragma ivdep\n", indent, "");

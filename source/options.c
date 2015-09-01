@@ -120,8 +120,9 @@ void cloog_options_print(FILE * foo, CloogOptions * options)
 
   fprintf(foo,"Options:\n") ;
   fprintf(foo,"OPTIONS FOR LOOP GENERATION\n") ;
-  fprintf(foo,"l           = %3d,\n",options->l) ;
-  fprintf(foo,"f           = %3d,\n",options->f) ;
+  fprintf(foo,"l              = %3d,\n",options->l) ;
+  fprintf(foo,"f              = %3d,\n",options->f) ;
+  fprintf(foo,"invariant_decl = %3d,\n",options->invariant_decl) ;
   fprintf(foo,"fs           = %3d,\n",options->f) ;
   if (options->fs_ls_size>=1) {
       fprintf(foo,"fs           = ");
@@ -205,7 +206,9 @@ void cloog_options_help()
   "  -l <depth>            Last loop depth to optimize (-1: infinity)\n"
   "                        (default setting: -1).\n"
   "  -f <depth>            First loop depth to start loop separation (-1: "
-  "infinity)\n                        (default setting:  1).\n") ;
+  "infinity)\n                        (default setting:  1).\n"
+  "  -invariant_decl <boolean>    Print (specified) loop invariant declarations"
+  " of statement(s)\n             (default setting: 0).\n") ;
   printf(
   "  -stop <depth>         Loop depth to stop code generation (-1: infinity)"
   "\n                        (default setting: -1).\n"
@@ -334,6 +337,7 @@ CloogOptions *cloog_options_malloc(CloogState *state)
   /* OPTIONS FOR LOOP GENERATION */
   options->l           = -1 ;  /* Last level to optimize: infinity. */
   options->f           =  1 ;  /* First level to optimize: the first. */
+  options->invariant_decl = 0; /* No loop invariant declarations to print */
   options->ls          = NULL ; /* Statement-wise l option is not set */
   options->fs          = NULL ; /* Statement-wise f option is not set */
   options->fs_ls_size  = 0;    /* No statement-wise f/s control */
@@ -394,6 +398,9 @@ void cloog_options_read(CloogState *state, int argc, char **argv,
     else
     if (strcmp(argv[i],"-f")   == 0)
     cloog_options_set(&(*options)->f,argc,argv,&i) ;
+    else
+    if (strcmp(argv[i],"-invariant_decl")   == 0)
+    cloog_options_set(&(*options)->invariant_decl,argc,argv,&i) ;
     else
     if (strcmp(argv[i],"-stop")   == 0)
     cloog_options_set(&(*options)->stop,argc,argv,&i) ;
