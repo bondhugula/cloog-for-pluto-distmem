@@ -105,6 +105,8 @@ struct clast_for {
     cloog_int_t		stride;
     struct clast_stmt *	body;
     int parallel;
+    /* if a loop is parallel, ID of the parallel loop nest it belongs to */
+    int loop_id;
     /* Comma separated list of loop private variables for OpenMP parallelization */
     char *private_vars;
     /* Comma separated list of reduction variable/operators for OpenMP parallelization */

@@ -231,6 +231,7 @@ struct clast_for *new_clast_for(CloogDomain *domain, const char *it,
     f->UB = UB;
     f->body = NULL;
     f->parallel = CLAST_PARALLEL_NOT;
+    f->loop_id = -1;
     f->private_vars = NULL;
     f->reduction_vars = NULL;
     f->time_var_name = NULL;

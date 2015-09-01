@@ -522,7 +522,16 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
                 fprintf(dst, ";\n");
             }
             fprintf(dst, "%*s", indent, "");
-            fprintf(dst, "polyrt_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, &lbp, &ubp);\n");
+            if (f->loop_id != -1) {
+                /* implies multi-level distribution */
+                fprintf(dst, "polyrt_multi_dim_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, \
+                    __NUM_DIST_DIMS%d, __DIM%d%s, &lbd_%s, &ubd_%s);\n",
+                        f->loop_id, f->loop_id, f->iterator, f->iterator, f->iterator);
+            }else{
+                fprintf(dst, "polyrt_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, &lbd_%s, &ubd_%s);\n",
+                        f->iterator, f->iterator);
+            }
+
             if (f->parallel & CLAST_PARALLEL_OMP) {
                 fprintf(dst, "#pragma omp parallel for%s%s%s%s%s%s\n",
                         (f->private_vars)? " private(":"",
@@ -543,15 +552,17 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
 	fprintf(dst, "for (");
 
     if (f->LB) {
-	fprintf(dst, "%s=", f->iterator);
-        if (f->parallel & (CLAST_PARALLEL_OMP | CLAST_PARALLEL_MPI)) {
+        fprintf(dst, "%s=", f->iterator);
+        if (f->parallel & CLAST_PARALLEL_MPI) {
+            fprintf(dst, "lbd_%s", f->iterator);
+        }else if (f->parallel & CLAST_PARALLEL_OMP) {
             fprintf(dst, "lbp");
         }else if (f->parallel & CLAST_PARALLEL_VEC){
             fprintf(dst, "lbv");
         }else{
-	pprint_expr(options, dst, f->LB);
+            pprint_expr(options, dst, f->LB);
         }
-    } else if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    }else if (options->language == CLOOG_LANGUAGE_FORTRAN)
 	cloog_die("unbounded loops not allowed in FORTRAN.\n");
 
     if (options->language == CLOOG_LANGUAGE_FORTRAN)
@@ -560,10 +571,12 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
 	fprintf(dst,";");
 
     if (f->UB) { 
-	if (options->language != CLOOG_LANGUAGE_FORTRAN)
-	    fprintf(dst,"%s<=", f->iterator);
+        if (options->language != CLOOG_LANGUAGE_FORTRAN)
+            fprintf(dst,"%s<=", f->iterator);
 
-        if (f->parallel & (CLAST_PARALLEL_OMP | CLAST_PARALLEL_MPI)) {
+        if (f->parallel & CLAST_PARALLEL_MPI) {
+            fprintf(dst, "ubd_%s", f->iterator);
+        }else if (f->parallel & CLAST_PARALLEL_OMP) {
             fprintf(dst, "ubp");
         }else if (f->parallel & CLAST_PARALLEL_VEC){
             fprintf(dst, "ubv");
