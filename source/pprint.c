@@ -476,13 +476,13 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
         if ((f->parallel & CLAST_PARALLEL_OMP) && (f->parallel & CLAST_PARALLEL_USER)
                && !(f->parallel & CLAST_PARALLEL_MPI)) {
             if (f->LB) {
-                fprintf(dst, "lbp%s=", f->suffix);
+                fprintf(dst, "int lbp%s=", f->suffix);
                 pprint_expr(options, dst, f->LB);
                 fprintf(dst, ";\n");
             }
             if (f->UB) {
                 fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "ubp%s=", f->suffix);
+                fprintf(dst, "int ubp%s=", f->suffix);
                 pprint_expr(options, dst, f->UB);
                 fprintf(dst, ";\n");
             }
