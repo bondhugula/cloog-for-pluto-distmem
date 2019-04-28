@@ -499,6 +499,7 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
         }
         if ((f->parallel & CLAST_PARALLEL_OMP) && !(f->parallel & CLAST_PARALLEL_MPI)
                && !(f->parallel & CLAST_PARALLEL_USER)) {
+	    fprintf(dst, "{/* extra braces to avoid redefination of lbp*/\n");
             if (f->LB) {
                 fprintf(dst, "int lbp%s=", f->suffix);
                 pprint_expr(options, dst, f->LB);
@@ -663,7 +664,9 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
 	fprintf(dst,"END DO\n") ; 
     else
 	fprintf(dst,"}\n") ; 
-
+        if ((f->parallel & CLAST_PARALLEL_OMP) && !(f->parallel & CLAST_PARALLEL_MPI)) {
+		fprintf(dst,"}/*end of omp parallel loop */\n") ; 
+}
     if (options->language == CLOOG_LANGUAGE_C) {
         if (f->time_var_name) {
             fprintf(dst, "IF_TIME(%s += cloog_util_rtclock() - %s_start);\n",
