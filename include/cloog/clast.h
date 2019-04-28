@@ -116,6 +116,11 @@ struct clast_for {
     char *time_var_name;
     /* User string for user directives. */
     char *user_directive;
+
+    /* Suffix to append to lbp, ubp, lbv, ubv when the loop is being
+     * vectorized/parallelized; needed when dealing with multiple SCoPs per
+     * file */
+    char *suffix;
 };
 
 struct clast_equation {

@@ -215,6 +215,7 @@ static void free_clast_for(struct clast_stmt *s)
     if (f->reduction_vars) free(f->reduction_vars);
     if (f->time_var_name) free(f->time_var_name);
     if (f->user_directive) free(f->user_directive);
+    if (f->suffix) free(f->suffix);
     free(f);
 }
 
@@ -235,6 +236,7 @@ struct clast_for *new_clast_for(CloogDomain *domain, const char *it,
     f->private_vars = NULL;
     f->reduction_vars = NULL;
     f->time_var_name = NULL;
+    f->suffix = NULL;
     f->user_directive = NULL;
     cloog_int_init(f->stride);
     if (stride)

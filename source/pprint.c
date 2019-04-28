@@ -476,13 +476,13 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
         if ((f->parallel & CLAST_PARALLEL_OMP) && (f->parallel & CLAST_PARALLEL_USER)
                && !(f->parallel & CLAST_PARALLEL_MPI)) {
             if (f->LB) {
-                fprintf(dst, "lbp=");
+                fprintf(dst, "lbp%s=", f->suffix);
                 pprint_expr(options, dst, f->LB);
                 fprintf(dst, ";\n");
             }
             if (f->UB) {
                 fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "ubp=");
+                fprintf(dst, "ubp%s=", f->suffix);
                 pprint_expr(options, dst, f->UB);
                 fprintf(dst, ";\n");
             }
@@ -500,13 +500,13 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
         if ((f->parallel & CLAST_PARALLEL_OMP) && !(f->parallel & CLAST_PARALLEL_MPI)
                && !(f->parallel & CLAST_PARALLEL_USER)) {
             if (f->LB) {
-                fprintf(dst, "lbp=");
+                fprintf(dst, "int lbp%s=", f->suffix);
                 pprint_expr(options, dst, f->LB);
                 fprintf(dst, ";\n");
             }
             if (f->UB) {
                 fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "ubp=");
+                fprintf(dst, "int ubp%s=", f->suffix);
                 pprint_expr(options, dst, f->UB);
                 fprintf(dst, ";\n");
             }
@@ -522,13 +522,13 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
         if ((f->parallel & CLAST_PARALLEL_VEC) && !(f->parallel & CLAST_PARALLEL_OMP)
                && !(f->parallel & CLAST_PARALLEL_MPI)) {
             if (f->LB) {
-                fprintf(dst, "lbv=");
+                fprintf(dst, "lbv%s=", f->suffix);
                 pprint_expr(options, dst, f->LB);
                 fprintf(dst, ";\n");
             }
             if (f->UB) {
                 fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "ubv=");
+                fprintf(dst, "ubv%s=", f->suffix);
                 pprint_expr(options, dst, f->UB);
                 fprintf(dst, ";\n");
             }
@@ -567,13 +567,13 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
         }
         if (f->parallel & CLAST_PARALLEL_MPI) {
             if (f->LB) {
-                fprintf(dst, "_lb_dist=");
+                fprintf(dst, "_lb_dist%s=", f->suffix);
                 pprint_expr(options, dst, f->LB);
                 fprintf(dst, ";\n");
             }
             if (f->UB) {
                 fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "_ub_dist=");
+                fprintf(dst, "_ub_dist%s=", f->suffix);
                 pprint_expr(options, dst, f->UB);
                 fprintf(dst, ";\n");
             }
@@ -610,11 +610,11 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
     if (f->LB) {
         fprintf(dst, "%s=", f->iterator);
         if (f->parallel & CLAST_PARALLEL_MPI) {
-            fprintf(dst, "lbd_%s", f->iterator);
+            fprintf(dst, "lbd_%s%s", f->iterator, f->suffix);
         }else if (f->parallel & CLAST_PARALLEL_OMP) {
-            fprintf(dst, "lbp");
+            fprintf(dst, "lbp%s", f->suffix);
         }else if (f->parallel & CLAST_PARALLEL_VEC){
-            fprintf(dst, "lbv");
+            fprintf(dst, "lbv%s", f->suffix);
         }else{
             pprint_expr(options, dst, f->LB);
         }
@@ -631,11 +631,11 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
             fprintf(dst,"%s<=", f->iterator);
 
         if (f->parallel & CLAST_PARALLEL_MPI) {
-            fprintf(dst, "ubd_%s", f->iterator);
+            fprintf(dst, "ubd_%s%s", f->iterator, f->suffix);
         }else if (f->parallel & CLAST_PARALLEL_OMP) {
-            fprintf(dst, "ubp");
+            fprintf(dst, "ubp%s", f->suffix);
         }else if (f->parallel & CLAST_PARALLEL_VEC){
-            fprintf(dst, "ubv");
+            fprintf(dst, "ubv%s", f->suffix);
         }else{
             pprint_expr(options, dst, f->UB);
         }
