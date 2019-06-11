@@ -1,12 +1,11 @@
 
-   /**-------------------------------------------------------------------**
-    **                              CLooG                                **
-    **-------------------------------------------------------------------**
-    **                             pprint.c                              **
-    **-------------------------------------------------------------------**
-    **                  First version: october 26th 2001                 **
-    **-------------------------------------------------------------------**/
-
+/**-------------------------------------------------------------------**
+ **                              CLooG                                **
+ **-------------------------------------------------------------------**
+ **                             pprint.c                              **
+ **-------------------------------------------------------------------**
+ **                  First version: october 26th 2001                 **
+ **-------------------------------------------------------------------**/
 
 /******************************************************************************
  *               CLooG : the Chunky Loop Generator (experimental)             *
@@ -44,53 +43,52 @@
  *                    structure for equality spreading.
  */
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <string.h>
+#include "../include/cloog/cloog.h"
 #include <assert.h>
-# include "../include/cloog/cloog.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef OSL_SUPPORT
-#include <osl/util.h>
 #include <osl/body.h>
 #include <osl/extensions/extbody.h>
-#include <osl/statement.h>
 #include <osl/scop.h>
+#include <osl/statement.h>
+#include <osl/util.h>
 #endif
 
-
 static void pprint_name(FILE *dst, struct clast_name *n);
-static void pprint_term(struct cloogoptions *i, FILE *dst, struct clast_term *t);
-static void pprint_sum(struct cloogoptions *opt,
-			FILE *dst, struct clast_reduction *r);
-static void pprint_binary(struct cloogoptions *i,
-			FILE *dst, struct clast_binary *b);
-static void pprint_minmax_f(struct cloogoptions *info,
-			FILE *dst, struct clast_reduction *r);
-static void pprint_minmax_c(struct cloogoptions *info,
-			FILE *dst, struct clast_reduction *r);
-static void pprint_reduction(struct cloogoptions *i,
-			FILE *dst, struct clast_reduction *r);
-static void pprint_expr(struct cloogoptions *i, FILE *dst, struct clast_expr *e);
-static void pprint_equation(struct cloogoptions *i,
-			FILE *dst, struct clast_equation *eq);
-static void pprint_assignment(struct cloogoptions *i, FILE *dst, 
-			struct clast_assignment *a);
+static void pprint_term(struct cloogoptions *i, FILE *dst,
+                        struct clast_term *t);
+static void pprint_sum(struct cloogoptions *opt, FILE *dst,
+                       struct clast_reduction *r);
+static void pprint_binary(struct cloogoptions *i, FILE *dst,
+                          struct clast_binary *b);
+static void pprint_minmax_f(struct cloogoptions *info, FILE *dst,
+                            struct clast_reduction *r);
+static void pprint_minmax_c(struct cloogoptions *info, FILE *dst,
+                            struct clast_reduction *r);
+static void pprint_reduction(struct cloogoptions *i, FILE *dst,
+                             struct clast_reduction *r);
+static void pprint_expr(struct cloogoptions *i, FILE *dst,
+                        struct clast_expr *e);
+static void pprint_equation(struct cloogoptions *i, FILE *dst,
+                            struct clast_equation *eq);
+static void pprint_assignment(struct cloogoptions *i, FILE *dst,
+                              struct clast_assignment *a);
 static void pprint_user_stmt(struct cloogoptions *options, FILE *dst,
-		       struct clast_user_stmt *u);
+                             struct clast_user_stmt *u);
 static void pprint_guard(struct cloogoptions *options, FILE *dst, int indent,
-		   struct clast_guard *g);
+                         struct clast_guard *g);
 static void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
-		 struct clast_for *f);
-static void pprint_stmt_list(struct cloogoptions *options, FILE *dst, int indent,
-		       struct clast_stmt *s);
+                       struct clast_for *f);
+static void pprint_stmt_list(struct cloogoptions *options, FILE *dst,
+                             int indent, struct clast_stmt *s);
 static int pprint_osl_body(struct cloogoptions *options, FILE *dst,
-    struct clast_user_stmt *u);
+                           struct clast_user_stmt *u);
 
-
-void pprint_name(FILE *dst, struct clast_name *n)
-{
-    fprintf(dst, "%s", n->name);
+void pprint_name(FILE *dst, struct clast_name *n) {
+  fprintf(dst, "%s", n->name);
 }
 
 /**
@@ -99,191 +97,186 @@ void pprint_name(FILE *dst, struct clast_name *n)
  * - val is the coefficient or constant value,
  * - name is a string containing the name of the iterator or of the parameter,
  */
-void pprint_term(struct cloogoptions *i, FILE *dst, struct clast_term *t)
-{
-    if (t->var) {
-	int group = t->var->type == clast_expr_red &&
-		    ((struct clast_reduction*) t->var)->n > 1;
-	if (cloog_int_is_one(t->val))
-	    ;
-	else if (cloog_int_is_neg_one(t->val))
-	    fprintf(dst, "-");
-        else {
-	    cloog_int_print(dst, t->val);
-	    fprintf(dst, "*");
-	}
-	if (group)
-	    fprintf(dst, "(");
-	pprint_expr(i, dst, t->var);
-	if (group)
-	    fprintf(dst, ")");
-    } else
-	cloog_int_print(dst, t->val);
+void pprint_term(struct cloogoptions *i, FILE *dst, struct clast_term *t) {
+  if (t->var) {
+    int group = t->var->type == clast_expr_red &&
+                ((struct clast_reduction *)t->var)->n > 1;
+    if (cloog_int_is_one(t->val))
+      ;
+    else if (cloog_int_is_neg_one(t->val))
+      fprintf(dst, "-");
+    else {
+      cloog_int_print(dst, t->val);
+      fprintf(dst, "*");
+    }
+    if (group)
+      fprintf(dst, "(");
+    pprint_expr(i, dst, t->var);
+    if (group)
+      fprintf(dst, ")");
+  } else
+    cloog_int_print(dst, t->val);
 }
 
-void pprint_sum(struct cloogoptions *opt, FILE *dst, struct clast_reduction *r)
-{
-    int i;
-    struct clast_term *t;
+void pprint_sum(struct cloogoptions *opt, FILE *dst,
+                struct clast_reduction *r) {
+  int i;
+  struct clast_term *t;
 
-    assert(r->n >= 1);
-    assert(r->elts[0]->type == clast_expr_term);
-    t = (struct clast_term *) r->elts[0];
+  assert(r->n >= 1);
+  assert(r->elts[0]->type == clast_expr_term);
+  t = (struct clast_term *)r->elts[0];
+  pprint_term(opt, dst, t);
+
+  for (i = 1; i < r->n; ++i) {
+    assert(r->elts[i]->type == clast_expr_term);
+    t = (struct clast_term *)r->elts[i];
+    if (cloog_int_is_pos(t->val))
+      fprintf(dst, "+");
     pprint_term(opt, dst, t);
-
-    for (i = 1; i < r->n; ++i) {
-	assert(r->elts[i]->type == clast_expr_term);
-	t = (struct clast_term *) r->elts[i];
-	if (cloog_int_is_pos(t->val))
-	    fprintf(dst, "+");
-	pprint_term(opt, dst, t);
-    }
+  }
 }
 
-void pprint_binary(struct cloogoptions *i, FILE *dst, struct clast_binary *b)
-{
-    const char *s1 = NULL, *s2 = NULL, *s3 = NULL;
-    int group = b->LHS->type == clast_expr_red &&
-		((struct clast_reduction*) b->LHS)->n > 1;
-    if (i->language == CLOOG_LANGUAGE_FORTRAN) {
-	switch (b->type) {
-	case clast_bin_fdiv:
-	    s1 = "FLOOR(REAL(", s2 = ")/REAL(", s3 = "))";
-	    break;
-	case clast_bin_cdiv:
-	    s1 = "CEILING(REAL(", s2 = ")/REAL(", s3 = "))";
-	    break;
-	case clast_bin_div:
-	    if (group)
-		s1 = "(", s2 = ")/", s3 = "";
-	    else
-		s1 = "", s2 = "/", s3 = "";
-	    break;
-	case clast_bin_mod:
-	    s1 = "MOD(", s2 = ", ", s3 = ")";
-	    break;
-	}
-    } else {
-	switch (b->type) {
-	case clast_bin_fdiv:
-	    s1 = "floord(", s2 = ",", s3 = ")";
-	    break;
-	case clast_bin_cdiv:
-	    s1 = "ceild(", s2 = ",", s3 = ")";
-	    break;
-	case clast_bin_div:
-	    if (group)
-		s1 = "(", s2 = ")/", s3 = "";
-	    else
-		s1 = "", s2 = "/", s3 = "";
-	    break;
-	case clast_bin_mod:
-	    if (group)
-		s1 = "(", s2 = ")%", s3 = "";
-	    else
-		s1 = "", s2 = "%", s3 = "";
-	    break;
-	}
+void pprint_binary(struct cloogoptions *i, FILE *dst, struct clast_binary *b) {
+  const char *s1 = NULL, *s2 = NULL, *s3 = NULL;
+  int group = b->LHS->type == clast_expr_red &&
+              ((struct clast_reduction *)b->LHS)->n > 1;
+  if (i->language == CLOOG_LANGUAGE_FORTRAN) {
+    switch (b->type) {
+    case clast_bin_fdiv:
+      s1 = "FLOOR(REAL(", s2 = ")/REAL(", s3 = "))";
+      break;
+    case clast_bin_cdiv:
+      s1 = "CEILING(REAL(", s2 = ")/REAL(", s3 = "))";
+      break;
+    case clast_bin_div:
+      if (group)
+        s1 = "(", s2 = ")/", s3 = "";
+      else
+        s1 = "", s2 = "/", s3 = "";
+      break;
+    case clast_bin_mod:
+      s1 = "MOD(", s2 = ", ", s3 = ")";
+      break;
     }
-    fprintf(dst, "%s", s1);
-    pprint_expr(i, dst, b->LHS);
-    fprintf(dst, "%s", s2);
-    cloog_int_print(dst, b->RHS);
-    fprintf(dst, "%s", s3);
+  } else {
+    switch (b->type) {
+    case clast_bin_fdiv:
+      s1 = "floord(", s2 = ",", s3 = ")";
+      break;
+    case clast_bin_cdiv:
+      s1 = "ceild(", s2 = ",", s3 = ")";
+      break;
+    case clast_bin_div:
+      if (group)
+        s1 = "(", s2 = ")/", s3 = "";
+      else
+        s1 = "", s2 = "/", s3 = "";
+      break;
+    case clast_bin_mod:
+      if (group)
+        s1 = "(", s2 = ")%", s3 = "";
+      else
+        s1 = "", s2 = "%", s3 = "";
+      break;
+    }
+  }
+  fprintf(dst, "%s", s1);
+  pprint_expr(i, dst, b->LHS);
+  fprintf(dst, "%s", s2);
+  cloog_int_print(dst, b->RHS);
+  fprintf(dst, "%s", s3);
 }
 
-void pprint_minmax_f(struct cloogoptions *info, FILE *dst, struct clast_reduction *r)
-{
-    int i;
-    if (r->n == 0)
-	return;
-    fprintf(dst, r->type == clast_red_max ? "MAX(" : "MIN(");
+void pprint_minmax_f(struct cloogoptions *info, FILE *dst,
+                     struct clast_reduction *r) {
+  int i;
+  if (r->n == 0)
+    return;
+  fprintf(dst, r->type == clast_red_max ? "MAX(" : "MIN(");
+  pprint_expr(info, dst, r->elts[0]);
+  for (i = 1; i < r->n; ++i) {
+    fprintf(dst, ",");
+    pprint_expr(info, dst, r->elts[i]);
+  }
+  fprintf(dst, ")");
+}
+
+void pprint_minmax_c(struct cloogoptions *info, FILE *dst,
+                     struct clast_reduction *r) {
+  int i;
+  for (i = 1; i < r->n; ++i)
+    fprintf(dst, r->type == clast_red_max ? "max(" : "min(");
+  if (r->n > 0)
     pprint_expr(info, dst, r->elts[0]);
-    for (i = 1; i < r->n; ++i) {
-	fprintf(dst, ",");
-	pprint_expr(info, dst, r->elts[i]);
-    }
+  for (i = 1; i < r->n; ++i) {
+    fprintf(dst, ",");
+    pprint_expr(info, dst, r->elts[i]);
     fprintf(dst, ")");
+  }
 }
 
-void pprint_minmax_c(struct cloogoptions *info, FILE *dst, struct clast_reduction *r)
-{
-    int i;
-    for (i = 1; i < r->n; ++i)
-	fprintf(dst, r->type == clast_red_max ? "max(" : "min(");
-    if (r->n > 0)
-	pprint_expr(info, dst, r->elts[0]);
-    for (i = 1; i < r->n; ++i) {
-	fprintf(dst, ",");
-	pprint_expr(info, dst, r->elts[i]);
-	fprintf(dst, ")");
+void pprint_reduction(struct cloogoptions *i, FILE *dst,
+                      struct clast_reduction *r) {
+  switch (r->type) {
+  case clast_red_sum:
+    pprint_sum(i, dst, r);
+    break;
+  case clast_red_min:
+  case clast_red_max:
+    if (r->n == 1) {
+      pprint_expr(i, dst, r->elts[0]);
+      break;
     }
-}
-
-void pprint_reduction(struct cloogoptions *i, FILE *dst, struct clast_reduction *r)
-{
-    switch (r->type) {
-    case clast_red_sum:
-	pprint_sum(i, dst, r);
-	break;
-    case clast_red_min:
-    case clast_red_max:
-	if (r->n == 1) {
-	    pprint_expr(i, dst, r->elts[0]);
-	    break;
-	}
-	if (i->language == CLOOG_LANGUAGE_FORTRAN)
-	    pprint_minmax_f(i, dst, r);
-	else
-	    pprint_minmax_c(i, dst, r);
-	break;
-    default:
-	assert(0);
-    }
-}
-
-void pprint_expr(struct cloogoptions *i, FILE *dst, struct clast_expr *e)
-{
-    if (!e)
-	return;
-    switch (e->type) {
-    case clast_expr_name:
-	pprint_name(dst, (struct clast_name*) e);
-	break;
-    case clast_expr_term:
-	pprint_term(i, dst, (struct clast_term*) e);
-	break;
-    case clast_expr_red:
-	pprint_reduction(i, dst, (struct clast_reduction*) e);
-	break;
-    case clast_expr_bin:
-	pprint_binary(i, dst, (struct clast_binary*) e);
-	break;
-    default:
-	assert(0);
-    }
-}
-
-void pprint_equation(struct cloogoptions *i, FILE *dst, struct clast_equation *eq)
-{
-    pprint_expr(i, dst, eq->LHS);
-    if (eq->sign == 0)
-	fprintf(dst, " == ");
-    else if (eq->sign > 0)
-	fprintf(dst, " >= ");
+    if (i->language == CLOOG_LANGUAGE_FORTRAN)
+      pprint_minmax_f(i, dst, r);
     else
-	fprintf(dst, " <= ");
-    pprint_expr(i, dst, eq->RHS);
+      pprint_minmax_c(i, dst, r);
+    break;
+  default:
+    assert(0);
+  }
 }
 
-void pprint_assignment(struct cloogoptions *i, FILE *dst, 
-			struct clast_assignment *a)
-{
-    if (a->LHS)
-	fprintf(dst, "%s = ", a->LHS);
-    pprint_expr(i, dst, a->RHS);
+void pprint_expr(struct cloogoptions *i, FILE *dst, struct clast_expr *e) {
+  if (!e)
+    return;
+  switch (e->type) {
+  case clast_expr_name:
+    pprint_name(dst, (struct clast_name *)e);
+    break;
+  case clast_expr_term:
+    pprint_term(i, dst, (struct clast_term *)e);
+    break;
+  case clast_expr_red:
+    pprint_reduction(i, dst, (struct clast_reduction *)e);
+    break;
+  case clast_expr_bin:
+    pprint_binary(i, dst, (struct clast_binary *)e);
+    break;
+  default:
+    assert(0);
+  }
 }
 
+void pprint_equation(struct cloogoptions *i, FILE *dst,
+                     struct clast_equation *eq) {
+  pprint_expr(i, dst, eq->LHS);
+  if (eq->sign == 0)
+    fprintf(dst, " == ");
+  else if (eq->sign > 0)
+    fprintf(dst, " >= ");
+  else
+    fprintf(dst, " <= ");
+  pprint_expr(i, dst, eq->RHS);
+}
+
+void pprint_assignment(struct cloogoptions *i, FILE *dst,
+                       struct clast_assignment *a) {
+  if (a->LHS)
+    fprintf(dst, "%s = ", a->LHS);
+  pprint_expr(i, dst, a->RHS);
+}
 
 /**
  * pprint_osl_body function:
@@ -315,8 +308,7 @@ int pprint_osl_body(struct cloogoptions *options, FILE *dst,
 
     /* Ensure it has a printable body. */
     body = osl_statement_get_body(stmt);
-    if ((body != NULL) &&
-        (body->expression != NULL) &&
+    if ((body != NULL) && (body->expression != NULL) &&
         (body->iterators != NULL)) {
       expr = osl_util_identifier_substitution(body->expression->string[0],
                                               body->iterators->string);
@@ -340,9 +332,9 @@ int pprint_osl_body(struct cloogoptions *options, FILE *dst,
     }
   }
 #else
-  (void) options;
-  (void) dst;
-  (void) u;
+  (void)options;
+  (void)dst;
+  (void)u;
 #endif
   return 0;
 }
@@ -354,13 +346,12 @@ int pprint_osl_body(struct cloogoptions *options, FILE *dst,
  * \param[in] s Pointer to the clast_assignment to check.
  * \return 1 if we should print parentheses around s, 0 otherwise.
  */
-static int pprint_parentheses_are_safer(struct clast_assignment * s) {
+static int pprint_parentheses_are_safer(struct clast_assignment *s) {
   /* Expressions of the form X = Y should not be used in macros, so we
    * consider readability first for them and avoid parentheses.
    * Also, expressions having only one term can live without parentheses.
    */
-  if ((s->LHS) ||
-      (s->RHS->type == clast_expr_term) ||
+  if ((s->LHS) || (s->RHS->type == clast_expr_term) ||
       ((s->RHS->type == clast_expr_red) &&
        (((struct clast_reduction *)(s->RHS))->n == 1) &&
        (((struct clast_reduction *)(s->RHS))->elts[0]->type ==
@@ -371,360 +362,365 @@ static int pprint_parentheses_are_safer(struct clast_assignment * s) {
 }
 
 void pprint_user_stmt(struct cloogoptions *options, FILE *dst,
-		       struct clast_user_stmt *u)
-{
-    int parenthesis_to_close = 0;
-    struct clast_stmt *t;
+                      struct clast_user_stmt *u) {
+  int parenthesis_to_close = 0;
+  struct clast_stmt *t;
 
-    if (pprint_osl_body(options, dst, u))
-      return;
-    
-    if (u->statement->name)
-	fprintf(dst, "%s", u->statement->name);
-    else
-	fprintf(dst, "S%d", u->statement->number);
-    fprintf(dst, "(");
-    for (t = u->substitutions; t; t = t->next) {
-	assert(CLAST_STMT_IS_A(t, stmt_ass));
-        if (pprint_parentheses_are_safer((struct clast_assignment *)t)) {
-	  fprintf(dst, "(");
-          parenthesis_to_close = 1;
-        }
-	pprint_assignment(options, dst, (struct clast_assignment *)t);
-	if (t->next) {
-            if (parenthesis_to_close) {
-	      fprintf(dst, ")");
-              parenthesis_to_close = 0;
-            }
-	    fprintf(dst, ",");
-        }
+  if (pprint_osl_body(options, dst, u))
+    return;
+
+  if (u->statement->name)
+    fprintf(dst, "%s", u->statement->name);
+  else
+    fprintf(dst, "S%d", u->statement->number);
+  fprintf(dst, "(");
+  for (t = u->substitutions; t; t = t->next) {
+    assert(CLAST_STMT_IS_A(t, stmt_ass));
+    if (pprint_parentheses_are_safer((struct clast_assignment *)t)) {
+      fprintf(dst, "(");
+      parenthesis_to_close = 1;
     }
-    if (parenthesis_to_close)
-      fprintf(dst, ")");
+    pprint_assignment(options, dst, (struct clast_assignment *)t);
+    if (t->next) {
+      if (parenthesis_to_close) {
+        fprintf(dst, ")");
+        parenthesis_to_close = 0;
+      }
+      fprintf(dst, ",");
+    }
+  }
+  if (parenthesis_to_close)
     fprintf(dst, ")");
-    if (options->language != CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst, ";");
-    fprintf(dst, "\n");
+  fprintf(dst, ")");
+  if (options->language != CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, ";");
+  fprintf(dst, "\n");
 }
 
 void pprint_guard(struct cloogoptions *options, FILE *dst, int indent,
-		   struct clast_guard *g)
-{
-    int k;
-    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst,"IF ");
-    else
-	fprintf(dst,"if ");
-    if (g->n > 1)
-	fprintf(dst,"(");
-    for (k = 0; k < g->n; ++k) {
-	if (k > 0) {
-	    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-		fprintf(dst," .AND. ");
-	    else
-		fprintf(dst," && ");
-	}
-	fprintf(dst,"(");
-        pprint_equation(options, dst, &g->eq[k]);
-	fprintf(dst,")");
+                  struct clast_guard *g) {
+  int k;
+  if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, "IF ");
+  else
+    fprintf(dst, "if ");
+  if (g->n > 1)
+    fprintf(dst, "(");
+  for (k = 0; k < g->n; ++k) {
+    if (k > 0) {
+      if (options->language == CLOOG_LANGUAGE_FORTRAN)
+        fprintf(dst, " .AND. ");
+      else
+        fprintf(dst, " && ");
     }
-    if (g->n > 1)
-	fprintf(dst,")");
-    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst," THEN\n");
-    else
-	fprintf(dst," {\n");
+    fprintf(dst, "(");
+    pprint_equation(options, dst, &g->eq[k]);
+    fprintf(dst, ")");
+  }
+  if (g->n > 1)
+    fprintf(dst, ")");
+  if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, " THEN\n");
+  else
+    fprintf(dst, " {\n");
 
-    pprint_stmt_list(options, dst, indent + INDENT_STEP, g->then);
+  pprint_stmt_list(options, dst, indent + INDENT_STEP, g->then);
 
-    fprintf(dst, "%*s", indent, "");
-    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst,"END IF\n"); 
-    else
-	fprintf(dst,"}\n"); 
+  fprintf(dst, "%*s", indent, "");
+  if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, "END IF\n");
+  else
+    fprintf(dst, "}\n");
 }
 
-char *pprint_replacestr(char *string, char *sub, char *replace)
-{
-    if (!string || !sub || !replace) return NULL;
-    char *pos = string; int found = 0;
-    while ((pos = strstr(pos, sub))) {
-        pos += strlen(sub);
-        found++;
-    }
-    if (found == 0) return NULL;
-    int size = ((strlen(string) - (strlen(sub) * found)) + (strlen(replace) * found)) + 1;
-    char *result = (char*)malloc(size);
-    result[0] = 0;
-    pos = string;
-    char *pos1;
-    while ((pos1 = strstr(pos, sub))) {
-        int len = (pos1 - pos);
-        strncat(result, pos, len);
-        strncat(result, replace, strlen(replace));
-        pos = (pos1 + strlen(sub));
-    }
-    if (pos != (string + strlen(string))) {
-        strncat(result, pos, (string + strlen(string) - pos));
-    }
-    return result;
+char *pprint_replacestr(char *string, char *sub, char *replace) {
+  if (!string || !sub || !replace)
+    return NULL;
+  char *pos = string;
+  int found = 0;
+  while ((pos = strstr(pos, sub))) {
+    pos += strlen(sub);
+    found++;
+  }
+  if (found == 0)
+    return NULL;
+  int size =
+      ((strlen(string) - (strlen(sub) * found)) + (strlen(replace) * found)) +
+      1;
+  char *result = (char *)malloc(size);
+  result[0] = 0;
+  pos = string;
+  char *pos1;
+  while ((pos1 = strstr(pos, sub))) {
+    int len = (pos1 - pos);
+    strncat(result, pos, len);
+    strncat(result, replace, strlen(replace));
+    pos = (pos1 + strlen(sub));
+  }
+  if (pos != (string + strlen(string))) {
+    strncat(result, pos, (string + strlen(string) - pos));
+  }
+  return result;
 }
-
 
 void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
-		 struct clast_for *f)
-{
-    if (options->language == CLOOG_LANGUAGE_C) {
-        if (f->time_var_name) {
-            fprintf(dst, "IF_TIME(%s_start = cloog_util_rtclock());\n",
-                    (f->time_var_name) ? f->time_var_name : "");
+                struct clast_for *f) {
+  if (options->language == CLOOG_LANGUAGE_C) {
+    if (f->time_var_name) {
+      fprintf(dst, "IF_TIME(%s_start = cloog_util_rtclock());\n",
+              (f->time_var_name) ? f->time_var_name : "");
+    }
+    if ((f->parallel & CLAST_PARALLEL_OMP) &&
+        (f->parallel & CLAST_PARALLEL_USER) &&
+        !(f->parallel & CLAST_PARALLEL_MPI)) {
+      if (f->LB) {
+        fprintf(dst, "int lbp%s=", f->suffix);
+        pprint_expr(options, dst, f->LB);
+        fprintf(dst, ";\n");
+      }
+      if (f->UB) {
+        fprintf(dst, "%*s", indent, "");
+        fprintf(dst, "int ubp%s=", f->suffix);
+        pprint_expr(options, dst, f->UB);
+        fprintf(dst, ";\n");
+      }
+      fprintf(dst, "#pragma %s%s%s%s%s%s%s\n",
+              (f->user_directive) ? f->user_directive : "omp parallel for",
+              (f->private_vars) ? " private(" : "",
+              (f->private_vars) ? f->private_vars : "",
+              (f->private_vars) ? ")" : "",
+              (f->reduction_vars) ? " reduction(" : "",
+              (f->reduction_vars) ? f->reduction_vars : "",
+              (f->reduction_vars) ? ")" : "");
+
+      fprintf(dst, "%*s", indent, "");
+    }
+    if ((f->parallel & CLAST_PARALLEL_OMP) &&
+        !(f->parallel & CLAST_PARALLEL_MPI) &&
+        !(f->parallel & CLAST_PARALLEL_USER)) {
+      fprintf(dst, "{/* extra braces to avoid redefination of lbp*/\n");
+      if (f->LB) {
+        fprintf(dst, "int lbp%s=", f->suffix);
+        pprint_expr(options, dst, f->LB);
+        fprintf(dst, ";\n");
+      }
+      if (f->UB) {
+        fprintf(dst, "%*s", indent, "");
+        fprintf(dst, "int ubp%s=", f->suffix);
+        pprint_expr(options, dst, f->UB);
+        fprintf(dst, ";\n");
+      }
+      fprintf(dst, "#pragma omp parallel for%s%s%s%s%s%s\n",
+              (f->private_vars) ? " private(" : "",
+              (f->private_vars) ? f->private_vars : "",
+              (f->private_vars) ? ")" : "",
+              (f->reduction_vars) ? " reduction(" : "",
+              (f->reduction_vars) ? f->reduction_vars : "",
+              (f->reduction_vars) ? ")" : "");
+      fprintf(dst, "%*s", indent, "");
+    }
+    if ((f->parallel & CLAST_PARALLEL_VEC) &&
+        !(f->parallel & CLAST_PARALLEL_OMP) &&
+        !(f->parallel & CLAST_PARALLEL_MPI)) {
+      if (f->LB) {
+        fprintf(dst, "lbv%s=", f->suffix);
+        pprint_expr(options, dst, f->LB);
+        fprintf(dst, ";\n");
+      }
+      if (f->UB) {
+        fprintf(dst, "%*s", indent, "");
+        fprintf(dst, "ubv%s=", f->suffix);
+        pprint_expr(options, dst, f->UB);
+        fprintf(dst, ";\n");
+      }
+      if (options->invariant_decl) {
+        FILE *fp = fopen("__temp.s", "a+");
+        if (fp != NULL) {
+          pprint_stmt_list(options, fp, 0, f->body);
+
+          char *temp_str = (char *)malloc(1024);
+          temp_str[0] = 0;
+
+          rewind(fp);
+
+          fprintf(dst, "%*s", indent, "");
+          fprintf(
+              dst,
+              "##if (defined __DATA_DIST_DECLS || defined USE_LOCAL_ARRAYS)\n");
+
+          while (fgets(temp_str, 1024, fp)) {
+            char *str = pprint_replacestr(temp_str, "S", "decl_S");
+            if (str) {
+              fprintf(dst, "%*s", indent, "");
+              fprintf(dst, "%s", str);
+            }
+          }
+
+          fprintf(dst, "%*s", indent, "");
+          fprintf(dst, "##endif\n");
+
+          fclose(fp);
+          remove("__temp.s");
         }
-        if ((f->parallel & CLAST_PARALLEL_OMP) && (f->parallel & CLAST_PARALLEL_USER)
-               && !(f->parallel & CLAST_PARALLEL_MPI)) {
-            if (f->LB) {
-                fprintf(dst, "int lbp%s=", f->suffix);
-                pprint_expr(options, dst, f->LB);
-                fprintf(dst, ";\n");
-            }
-            if (f->UB) {
-                fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "int ubp%s=", f->suffix);
-                pprint_expr(options, dst, f->UB);
-                fprintf(dst, ";\n");
-            }
-            fprintf(dst, "#pragma %s%s%s%s%s%s%s\n",
-                    (f->user_directive)? f->user_directive : "omp parallel for",
-                    (f->private_vars)? " private(":"",
-                    (f->private_vars)? f->private_vars: "",
-                    (f->private_vars)? ")":"",
-                    (f->reduction_vars)? " reduction(": "",
-                    (f->reduction_vars)? f->reduction_vars: "",
-                    (f->reduction_vars)? ")": "");
+      }
 
-            fprintf(dst, "%*s", indent, "");
-        }
-        if ((f->parallel & CLAST_PARALLEL_OMP) && !(f->parallel & CLAST_PARALLEL_MPI)
-               && !(f->parallel & CLAST_PARALLEL_USER)) {
-	    fprintf(dst, "{/* extra braces to avoid redefination of lbp*/\n");
-            if (f->LB) {
-                fprintf(dst, "int lbp%s=", f->suffix);
-                pprint_expr(options, dst, f->LB);
-                fprintf(dst, ";\n");
-            }
-            if (f->UB) {
-                fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "int ubp%s=", f->suffix);
-                pprint_expr(options, dst, f->UB);
-                fprintf(dst, ";\n");
-            }
-            fprintf(dst, "#pragma omp parallel for%s%s%s%s%s%s\n",
-                    (f->private_vars)? " private(":"",
-                    (f->private_vars)? f->private_vars: "",
-                    (f->private_vars)? ")":"",
-                    (f->reduction_vars)? " reduction(": "",
-                    (f->reduction_vars)? f->reduction_vars: "",
-                    (f->reduction_vars)? ")": "");
-            fprintf(dst, "%*s", indent, "");
-        }
-        if ((f->parallel & CLAST_PARALLEL_VEC) && !(f->parallel & CLAST_PARALLEL_OMP)
-               && !(f->parallel & CLAST_PARALLEL_MPI)) {
-            if (f->LB) {
-                fprintf(dst, "lbv%s=", f->suffix);
-                pprint_expr(options, dst, f->LB);
-                fprintf(dst, ";\n");
-            }
-            if (f->UB) {
-                fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "ubv%s=", f->suffix);
-                pprint_expr(options, dst, f->UB);
-                fprintf(dst, ";\n");
-            }
-            if (options->invariant_decl) {
-                FILE *fp = fopen("__temp.s", "a+");
-                if (fp != NULL) {
-                    pprint_stmt_list(options, fp, 0, f->body);
-
-                    char *temp_str = (char *)malloc(1024);
-                    temp_str[0] = 0;
-
-                    rewind(fp);
-
-                    fprintf(dst, "%*s", indent, "");
-                    fprintf(dst, "##if (defined __DATA_DIST_DECLS || defined USE_LOCAL_ARRAYS)\n");
-
-                    while (fgets(temp_str, 1024, fp)) {
-                        char *str = pprint_replacestr(temp_str, "S", "decl_S");
-                        if (str) {
-                            fprintf(dst, "%*s", indent, "");
-                            fprintf(dst, "%s", str);
-                        }
-                    }
-
-                    fprintf(dst, "%*s", indent, "");
-                    fprintf(dst, "##endif\n");
-
-                    fclose(fp);
-                    remove("__temp.s");
-                }
-            }
-
-            fprintf(dst, "%*s#pragma ivdep\n", indent, "");
-            fprintf(dst, "%*s#pragma vector always\n", indent, "");
-            fprintf(dst, "%*s", indent, "");
-        }
-        if (f->parallel & CLAST_PARALLEL_MPI) {
-            if (f->LB) {
-                fprintf(dst, "_lb_dist%s=", f->suffix);
-                pprint_expr(options, dst, f->LB);
-                fprintf(dst, ";\n");
-            }
-            if (f->UB) {
-                fprintf(dst, "%*s", indent, "");
-                fprintf(dst, "_ub_dist%s=", f->suffix);
-                pprint_expr(options, dst, f->UB);
-                fprintf(dst, ";\n");
-            }
-            fprintf(dst, "%*s", indent, "");
-            if (f->loop_id != -1) {
-                /* implies multi-level distribution */
-                fprintf(dst, "polyrt_multi_dim_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, \
+      fprintf(dst, "%*s#pragma ivdep\n", indent, "");
+      fprintf(dst, "%*s#pragma vector always\n", indent, "");
+      fprintf(dst, "%*s", indent, "");
+    }
+    if (f->parallel & CLAST_PARALLEL_MPI) {
+      if (f->LB) {
+        fprintf(dst, "_lb_dist%s=", f->suffix);
+        pprint_expr(options, dst, f->LB);
+        fprintf(dst, ";\n");
+      }
+      if (f->UB) {
+        fprintf(dst, "%*s", indent, "");
+        fprintf(dst, "_ub_dist%s=", f->suffix);
+        pprint_expr(options, dst, f->UB);
+        fprintf(dst, ";\n");
+      }
+      fprintf(dst, "%*s", indent, "");
+      if (f->loop_id != -1) {
+        /* implies multi-level distribution */
+        fprintf(
+            dst,
+            "polyrt_multi_dim_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, \
                     __NUM_DIST_DIMS%d, __DIM%d%s, &lbd_%s, &ubd_%s);\n",
-                        f->loop_id, f->loop_id, f->iterator, f->iterator, f->iterator);
-            }else{
-                fprintf(dst, "polyrt_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, &lbd_%s, &ubd_%s);\n",
-                        f->iterator, f->iterator);
-            }
+            f->loop_id, f->loop_id, f->iterator, f->iterator, f->iterator);
+      } else {
+        fprintf(dst,
+                "polyrt_loop_dist(_lb_dist, _ub_dist, nprocs, my_rank, "
+                "&lbd_%s, &ubd_%s);\n",
+                f->iterator, f->iterator);
+      }
 
-            if (f->parallel & CLAST_PARALLEL_OMP) {
-                fprintf(dst, "#pragma omp parallel for%s%s%s%s%s%s\n",
-                        (f->private_vars)? " private(":"",
-                        (f->private_vars)? f->private_vars: "",
-                        (f->private_vars)? ")":"",
-                        (f->reduction_vars)? " reduction(": "",
-                        (f->reduction_vars)? f->reduction_vars: "",
-                        (f->reduction_vars)? ")": "");
-            }
-            fprintf(dst, "%*s", indent, "");
-        }
-
+      if (f->parallel & CLAST_PARALLEL_OMP) {
+        fprintf(dst, "#pragma omp parallel for%s%s%s%s%s%s\n",
+                (f->private_vars) ? " private(" : "",
+                (f->private_vars) ? f->private_vars : "",
+                (f->private_vars) ? ")" : "",
+                (f->reduction_vars) ? " reduction(" : "",
+                (f->reduction_vars) ? f->reduction_vars : "",
+                (f->reduction_vars) ? ")" : "");
+      }
+      fprintf(dst, "%*s", indent, "");
     }
+  }
 
-    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst, "DO ");
-    else
-	fprintf(dst, "for (");
+  if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, "DO ");
+  else
+    fprintf(dst, "for (");
 
-    if (f->LB) {
-        fprintf(dst, "%s=", f->iterator);
-        if (f->parallel & CLAST_PARALLEL_MPI) {
-            fprintf(dst, "lbd_%s%s", f->iterator, f->suffix);
-        }else if (f->parallel & CLAST_PARALLEL_OMP) {
-            fprintf(dst, "lbp%s", f->suffix);
-        }else if (f->parallel & CLAST_PARALLEL_VEC){
-            fprintf(dst, "lbv%s", f->suffix);
-        }else{
-            pprint_expr(options, dst, f->LB);
-        }
-    }else if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	cloog_die("unbounded loops not allowed in FORTRAN.\n");
-
-    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst,", ");
-    else
-	fprintf(dst,";");
-
-    if (f->UB) { 
-        if (options->language != CLOOG_LANGUAGE_FORTRAN)
-            fprintf(dst,"%s<=", f->iterator);
-
-        if (f->parallel & CLAST_PARALLEL_MPI) {
-            fprintf(dst, "ubd_%s%s", f->iterator, f->suffix);
-        }else if (f->parallel & CLAST_PARALLEL_OMP) {
-            fprintf(dst, "ubp%s", f->suffix);
-        }else if (f->parallel & CLAST_PARALLEL_VEC){
-            fprintf(dst, "ubv%s", f->suffix);
-        }else{
-            pprint_expr(options, dst, f->UB);
-        }
-    }else if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	cloog_die("unbounded loops not allowed in FORTRAN.\n");
-
-    if (options->language == CLOOG_LANGUAGE_FORTRAN) {
-	if (cloog_int_gt_si(f->stride, 1))
-	    cloog_int_print(dst, f->stride);
-	fprintf(dst,"\n");
+  if (f->LB) {
+    fprintf(dst, "%s=", f->iterator);
+    if (f->parallel & CLAST_PARALLEL_MPI) {
+      fprintf(dst, "lbd_%s%s", f->iterator, f->suffix);
+    } else if (f->parallel & CLAST_PARALLEL_OMP) {
+      fprintf(dst, "lbp%s", f->suffix);
+    } else if (f->parallel & CLAST_PARALLEL_VEC) {
+      fprintf(dst, "lbv%s", f->suffix);
+    } else {
+      pprint_expr(options, dst, f->LB);
     }
-    else {
-	if (cloog_int_gt_si(f->stride, 1)) {
-	    fprintf(dst,";%s+=", f->iterator);
-	    cloog_int_print(dst, f->stride);
-	    fprintf(dst, ") {\n");
-      } else
-	fprintf(dst, ";%s++) {\n", f->iterator);
-    }
+  } else if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    cloog_die("unbounded loops not allowed in FORTRAN.\n");
 
-    pprint_stmt_list(options, dst, indent + INDENT_STEP, f->body);
+  if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, ", ");
+  else
+    fprintf(dst, ";");
 
-    fprintf(dst, "%*s", indent, "");
-    if (options->language == CLOOG_LANGUAGE_FORTRAN)
-	fprintf(dst,"END DO\n") ; 
-    else
-	fprintf(dst,"}\n") ; 
-        if ((f->parallel & CLAST_PARALLEL_OMP) && !(f->parallel & CLAST_PARALLEL_MPI)) {
-		fprintf(dst,"}/*end of omp parallel loop */\n") ; 
-}
-    if (options->language == CLOOG_LANGUAGE_C) {
-        if (f->time_var_name) {
-            fprintf(dst, "IF_TIME(%s += cloog_util_rtclock() - %s_start);\n",
-                    (f->time_var_name) ? f->time_var_name : "",
-                    (f->time_var_name) ? f->time_var_name : "");
-        }
+  if (f->UB) {
+    if (options->language != CLOOG_LANGUAGE_FORTRAN)
+      fprintf(dst, "%s<=", f->iterator);
+
+    if (f->parallel & CLAST_PARALLEL_MPI) {
+      fprintf(dst, "ubd_%s%s", f->iterator, f->suffix);
+    } else if (f->parallel & CLAST_PARALLEL_OMP) {
+      fprintf(dst, "ubp%s", f->suffix);
+    } else if (f->parallel & CLAST_PARALLEL_VEC) {
+      fprintf(dst, "ubv%s", f->suffix);
+    } else {
+      pprint_expr(options, dst, f->UB);
     }
+  } else if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    cloog_die("unbounded loops not allowed in FORTRAN.\n");
+
+  if (options->language == CLOOG_LANGUAGE_FORTRAN) {
+    if (cloog_int_gt_si(f->stride, 1))
+      cloog_int_print(dst, f->stride);
+    fprintf(dst, "\n");
+  } else {
+    if (cloog_int_gt_si(f->stride, 1)) {
+      fprintf(dst, ";%s+=", f->iterator);
+      cloog_int_print(dst, f->stride);
+      fprintf(dst, ") {\n");
+    } else
+      fprintf(dst, ";%s++) {\n", f->iterator);
+  }
+
+  pprint_stmt_list(options, dst, indent + INDENT_STEP, f->body);
+
+  fprintf(dst, "%*s", indent, "");
+  if (options->language == CLOOG_LANGUAGE_FORTRAN)
+    fprintf(dst, "END DO\n");
+  else {
+    fprintf(dst, "}\n");
+    if ((f->parallel & CLAST_PARALLEL_OMP) &&
+        !(f->parallel & CLAST_PARALLEL_MPI)) {
+      fprintf(dst, "}/*end of omp parallel loop */\n");
+    }
+  }
+  if (options->language == CLOOG_LANGUAGE_C) {
+    if (f->time_var_name) {
+      fprintf(dst, "IF_TIME(%s += cloog_util_rtclock() - %s_start);\n",
+              (f->time_var_name) ? f->time_var_name : "",
+              (f->time_var_name) ? f->time_var_name : "");
+    }
+  }
 }
 
 void pprint_stmt_list(struct cloogoptions *options, FILE *dst, int indent,
-		       struct clast_stmt *s)
-{
-    for ( ; s; s = s->next) {
-	if (CLAST_STMT_IS_A(s, stmt_root))
-	    continue;
-	fprintf(dst, "%*s", indent, "");
-	if (CLAST_STMT_IS_A(s, stmt_ass)) {
-	    pprint_assignment(options, dst, (struct clast_assignment *) s);
-	    if (options->language != CLOOG_LANGUAGE_FORTRAN)
-		fprintf(dst, ";");
-	    fprintf(dst, "\n");
-	} else if (CLAST_STMT_IS_A(s, stmt_user)) {
-	    pprint_user_stmt(options, dst, (struct clast_user_stmt *) s);
-	} else if (CLAST_STMT_IS_A(s, stmt_for)) {
-	    pprint_for(options, dst, indent, (struct clast_for *) s);
-	} else if (CLAST_STMT_IS_A(s, stmt_guard)) {
-	    pprint_guard(options, dst, indent, (struct clast_guard *) s);
-	} else if (CLAST_STMT_IS_A(s, stmt_block)) {
-	    fprintf(dst, "{\n");
-	    pprint_stmt_list(options, dst, indent + INDENT_STEP, 
-				((struct clast_block *)s)->body);
-	    fprintf(dst, "%*s", indent, "");
-	    fprintf(dst, "}\n");
-	} else {
-	    assert(0);
-	}
+                      struct clast_stmt *s) {
+  for (; s; s = s->next) {
+    if (CLAST_STMT_IS_A(s, stmt_root))
+      continue;
+    fprintf(dst, "%*s", indent, "");
+    if (CLAST_STMT_IS_A(s, stmt_ass)) {
+      pprint_assignment(options, dst, (struct clast_assignment *)s);
+      if (options->language != CLOOG_LANGUAGE_FORTRAN)
+        fprintf(dst, ";");
+      fprintf(dst, "\n");
+    } else if (CLAST_STMT_IS_A(s, stmt_user)) {
+      pprint_user_stmt(options, dst, (struct clast_user_stmt *)s);
+    } else if (CLAST_STMT_IS_A(s, stmt_for)) {
+      pprint_for(options, dst, indent, (struct clast_for *)s);
+    } else if (CLAST_STMT_IS_A(s, stmt_guard)) {
+      pprint_guard(options, dst, indent, (struct clast_guard *)s);
+    } else if (CLAST_STMT_IS_A(s, stmt_block)) {
+      fprintf(dst, "{\n");
+      pprint_stmt_list(options, dst, indent + INDENT_STEP,
+                       ((struct clast_block *)s)->body);
+      fprintf(dst, "%*s", indent, "");
+      fprintf(dst, "}\n");
+    } else {
+      assert(0);
     }
+  }
 }
-
 
 /******************************************************************************
  *                       Pretty Printing (dirty) functions                    *
  ******************************************************************************/
 
-void clast_pprint(FILE *foo, struct clast_stmt *root,
-		  int indent, CloogOptions *options)
-{
-    pprint_stmt_list(options, foo, indent, root);
+void clast_pprint(FILE *foo, struct clast_stmt *root, int indent,
+                  CloogOptions *options) {
+  pprint_stmt_list(options, foo, indent, root);
 }
 
-
-void clast_pprint_expr(struct cloogoptions *i, FILE *dst, struct clast_expr *e)
-{
-    pprint_expr(i, dst, e);
+void clast_pprint_expr(struct cloogoptions *i, FILE *dst,
+                       struct clast_expr *e) {
+  pprint_expr(i, dst, e);
 }
