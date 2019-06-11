@@ -59,6 +59,9 @@
 #include <osl/extensions/loop.h>
 #endif
 
+static int cloog_program_osl_pprint(FILE * file, CloogProgram * program,
+    CloogOptions * options);
+
 /******************************************************************************
  *                          Structure display function                        *
  ******************************************************************************/
@@ -341,6 +344,7 @@ static void print_scattering_declarations(FILE *file, CloogProgram *program,
 static void print_iterator_declarations(FILE *file, CloogProgram *program,
 	CloogOptions *options)
 {
+    (void) options;
     CloogNames *names = program->names;
 
     print_scattering_declarations(file, program, 2);
@@ -389,6 +393,7 @@ static void print_callable_preamble(FILE *file, CloogProgram *program,
 
 static void print_callable_postamble(FILE *file, CloogProgram *program)
 {
+    (void) program;
     fprintf(file, "}\n"); 
 }
 
@@ -410,8 +415,6 @@ static void print_iterator_declarations_osl(FILE *file, CloogProgram *program,
   osl_coordinates_p co = NULL;
   int i;
   int loopflags = 0;
-  char* vecvar[2] = {"lbv", "ubv"};
-  char* parvar[2] = {"lbp", "ubp"};
 
   osl_scop_p scop = options->scop;
   CloogNames *names = program->names;
@@ -427,11 +430,28 @@ static void print_iterator_declarations_osl(FILE *file, CloogProgram *program,
     print_declarations(file, names->nb_iterators, names->iterators, indent);
   }
 
+  /*
+   * Assigning string literals as follows is illegal in pedantic C:
+   *   char* vecvar[2] = {"lbv", "ubv"};
+   *   char* parvar[2] = {"lbp", "ubp"};
+   */
   loopflags = get_osl_loop_flags(scop);
-  if(loopflags & CLAST_PARALLEL_OMP)
-    print_declarations(file, 2, parvar, indent);
-  if(loopflags & CLAST_PARALLEL_VEC)
-    print_declarations(file, 2, vecvar, indent);
+  if(loopflags & CLAST_PARALLEL_OMP) {
+    char parvar_0[4], parvar_1[4];
+    snprintf(parvar_0, sizeof parvar_0 / sizeof *parvar_0, "lbp");
+    snprintf(parvar_1, sizeof parvar_1 / sizeof *parvar_1, "ubp");
+
+    char* parvar[2] = { parvar_0, parvar_1, };
+    print_declarations(file, 2, (char**) parvar, indent);
+  }
+  if(loopflags & CLAST_PARALLEL_VEC) {
+    char vecvar_0[4], vecvar_1[4];
+    snprintf(vecvar_0, sizeof vecvar_0 / sizeof *vecvar_0, "lbv");
+    snprintf(vecvar_1, sizeof vecvar_1 / sizeof *vecvar_1, "ubv");
+
+    char* vecvar[2] = { vecvar_0, vecvar_1, };
+    print_declarations(file, 2, (char**) vecvar, indent);
+  }
   
   fprintf(file, "\n");
 }
@@ -603,6 +623,10 @@ int cloog_program_osl_pprint(FILE * file, CloogProgram * program,
 
     return 1;
   }
+#else
+  (void) file;
+  (void) program;
+  (void) options;
 #endif
   return 0;
 }

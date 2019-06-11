@@ -84,6 +84,8 @@ static void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
 		 struct clast_for *f);
 static void pprint_stmt_list(struct cloogoptions *options, FILE *dst, int indent,
 		       struct clast_stmt *s);
+static int pprint_osl_body(struct cloogoptions *options, FILE *dst,
+    struct clast_user_stmt *u);
 
 
 void pprint_name(FILE *dst, struct clast_name *n)
@@ -337,6 +339,10 @@ int pprint_osl_body(struct cloogoptions *options, FILE *dst,
       return 1;
     }
   }
+#else
+  (void) options;
+  (void) dst;
+  (void) u;
 #endif
   return 0;
 }
