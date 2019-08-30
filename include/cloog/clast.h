@@ -37,6 +37,10 @@ struct clast_term {
 #define CLAST_PARALLEL_VEC 4
 #define CLAST_PARALLEL_USER 8
 
+#define CLAST_UNROLL_NOT 0
+#define CLAST_UNROLL 1
+#define CLAST_UNROLL_JAM 2
+
 enum clast_red_type { clast_red_sum, clast_red_min, clast_red_max };
 struct clast_reduction {
     struct clast_expr	expr;
@@ -105,6 +109,8 @@ struct clast_for {
     cloog_int_t		stride;
     struct clast_stmt *	body;
     int parallel;
+    int unroll;
+    int ufactor;
     /* if a loop is parallel, ID of the parallel loop nest it belongs to */
     int loop_id;
     /* Comma separated list of loop private variables for OpenMP parallelization */
@@ -158,6 +164,8 @@ struct clast_for *new_clast_for(CloogDomain *domain, const char *it,
                                 struct clast_expr *LB, struct clast_expr *UB,
                                 CloogStride *stride);
 struct clast_guard *new_clast_guard(int n);
+
+void clast_unroll_jam(struct clast_stmt *s);
 
 void free_clast_name(struct clast_name *t);
 void free_clast_term(struct clast_term *t);
