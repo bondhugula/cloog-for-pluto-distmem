@@ -470,6 +470,18 @@ void pprint_for(struct cloogoptions *options, FILE *dst, int indent,
       fprintf(dst, "IF_TIME(%s_start = cloog_util_rtclock());\n",
               (f->time_var_name) ? f->time_var_name : "");
     }
+
+    /* If suffix is NULL then print an empty space after lbp/lbv or lbv/ubv
+     * definition and uses.*/
+    if (!f->suffix) {
+        f->suffix = strdup("");
+    }
+    /* This code is added for debugging purposes. Polycc will remove this
+     * code in the *.pluto.c. */
+    if (f->unroll == CLAST_UNROLL_JAM) {
+        fprintf (dst, "/* CLoog Unroll jammed loop */ \n");
+        fprintf(dst, "%*s", indent, "");
+    }
     if ((f->parallel & CLAST_PARALLEL_OMP) &&
         (f->parallel & CLAST_PARALLEL_USER) &&
         !(f->parallel & CLAST_PARALLEL_MPI)) {
